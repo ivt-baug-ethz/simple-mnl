@@ -1,0 +1,3 @@
+# Simple Multinomial Logit Model
+
+All coded in R. This should illustrate the mechanics of discrete choice modeling. More complicated models are not much more difficult to code (however usually envolve taking random draws since there exists no closed-form solution for the likelihood function (integral). Not too difficult though and the idea remains the same! :)

@@ -1,0 +1,59 @@
+data("Train", package="mlogit")
+head(Train, 3)
+Train$ID <- Train$id
+Train$CHOICE <- as.numeric(Train$choice)
+
+## for each individual return log likelihood (or sum over all individuals)
+## betas is named vector!
+## see Molloy equation (3)
+PnAt <- function(betas, data)
+{
+  nom <- exp(betas["B_price"] * data["price_A"] / 1000 + betas["B_time"] * data["time_A"] / 60 + betas["B_change"] * data["change_A"])
+  denom <- nom + exp(betas["ASC_B"] + betas["B_price"] * data["price_B"] / 1000 + betas["B_timeB"] * data["time_B"] / 60 + betas["B_change"] * data["change_B"])
+  
+  return(as.numeric(nom / denom))
+}
+
+
+PnBt <- function(betas, data)
+{
+  nom <- exp(betas["ASC_B"] + betas["B_price"] * data["price_B"] / 1000 + betas["B_timeB"] * data["time_B"] / 60 + betas["B_change"] * data["change_B"])
+  denom <- nom + exp(betas["B_price"] * data["price_A"] / 1000 + betas["B_time"] * data["time_A"] / 60 + betas["B_change"] * data["change_A"])
+  
+  return(as.numeric(nom / denom))
+}
+
+
+r_log_lik <- function(betas, data, e, verbose = TRUE)
+{
+  p <-
+    apply(data, 1, function(choice_task) {
+      nm <- names(choice_task)
+      ct <- stringr::str_remove_all(choice_task, "[A-Za-z]")
+      choice_task <- as.numeric(ct)
+      names(choice_task) <- nm
+      if (choice_task["CHOICE"] == 1) {
+        p <- PnAt(betas, choice_task)
+      } else {
+        p <- PnBt(betas, choice_task)
+      }
+    })
+  
+  out <- sum(log(p))
+  
+  if (verbose)
+  {
+    cat("=")
+    if (e$i %% 20 == 0) cat("\nLL: ", out, "\n")
+    e$i <- e$i + 1
+  }
+  
+  return(out)
+}
+
+e <- new.env()
+e$i <- 1
+
+LL <- function(betas) r_log_lik(betas, data = Train, e = e)
+start <- c("B_price" = 0, "B_time" = 0, "B_change" = 0, "ASC_B" = 0, "B_timeB" = 0)
+mL <- maxLik::maxLik(LL, start = start, method = "BFGS")
