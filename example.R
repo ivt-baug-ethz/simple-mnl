@@ -44,7 +44,8 @@ r_log_lik <- function(betas, data, e, verbose = TRUE)
   if (verbose)
   {
     cat("=")
-    if (e$i %% 20 == 0) cat("\nLL: ", out, "\n")
+    info <- sprintf("Call: %3d  -->  LL: %+4.2f", e$i, out)
+    if (e$i %% 30 == 0) cat("\n", info, "\n")
     e$i <- e$i + 1
   }
   
